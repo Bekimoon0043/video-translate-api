@@ -1,5 +1,4 @@
-flask
-vosk
-gtts
-requests
-googletrans==4.0.0-rc1
+Flask==2.3.3
+gTTS==2.4.0
+flask-cors==4.0.0
+gunicorn==21.2.0
