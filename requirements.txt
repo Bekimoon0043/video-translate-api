@@ -1,5 +1,5 @@
 Flask==2.3.3
-gtts==2.4.0        # optional, you can keep it
 flask-cors==4.0.0
 gunicorn==21.2.0
 requests==2.31.0
+pydub==0.25.1
