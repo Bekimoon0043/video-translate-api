@@ -19,7 +19,6 @@
     <select id="lang">
         <option value="am" selected>Amharic</option>
         <option value="en">English</option>
-        <!-- Add more languages if needed -->
     </select>
     <button onclick="speak()">Speak</button>
     <audio id="audio" controls></audio>
@@ -34,14 +33,23 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ text, lang })
             })
-            .then(response => response.blob())
+            .then(async response => {
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Server error (${response.status}): ${errorText}`);
+                }
+                return response.blob();
+            })
             .then(blob => {
                 const url = URL.createObjectURL(blob);
                 const audio = document.getElementById('audio');
                 audio.src = url;
-                audio.play();
+                audio.play().catch(e => console.error('Playback failed:', e));
             })
-            .catch(err => console.error(err));
+            .catch(err => {
+                console.error('Error:', err);
+                alert('Failed to generate speech: ' + err.message);
+            });
         }
     </script>
 </body>
