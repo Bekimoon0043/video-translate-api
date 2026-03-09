@@ -3,7 +3,7 @@ import time
 import random
 import requests
 import re
-from flask import Flask, request, send_file, jsonify
+from flask import Flask, request, send_file, jsonify, render_template
 from flask_cors import CORS
 from pydub import AudioSegment
 import logging
@@ -87,7 +87,10 @@ def fetch_audio_chunk(text, lang, retries=3):
                 raise
             time.sleep(1)
     raise Exception("Max retries exceeded")
-
+@app.route('/')
+def index():
+    return render_template('index.html')
+    
 @app.route('/api/tts', methods=['POST'])
 def text_to_speech():
     if request.is_json:
