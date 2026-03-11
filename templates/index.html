@@ -3,30 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Amharic TTS</title>
+    <title>Amharic TTS + Translator</title>
     <style>
         body { font-family: Arial; max-width: 600px; margin: 50px auto; padding: 20px; }
         textarea { width: 100%; height: 100px; margin-bottom: 10px; }
-        select, button { padding: 10px; margin-right: 10px; }
+        select, button { padding: 10px; margin-right: 10px; margin-bottom: 10px; }
         audio { margin-top: 20px; width: 100%; }
+        .translation-result { background: #f0f0f0; padding: 10px; border-radius: 5px; margin-top: 10px; }
     </style>
 </head>
 <body>
-    <h1>Amharic Text-to-Speech</h1>
-    <textarea id="text" placeholder="Enter text here...">ሰላም ዓለም</textarea>
+    <h1>Amharic TTS & Translator</h1>
+
+    <h3>Text-to-Speech (Amharic)</h3>
+    <textarea id="tts-text" placeholder="Enter Amharic text...">ሰላም ዓለም</textarea>
     <br>
-    <label for="lang">Language:</label>
-    <select id="lang">
+    <label for="tts-lang">Language:</label>
+    <select id="tts-lang">
         <option value="am" selected>Amharic</option>
         <option value="en">English</option>
     </select>
     <button onclick="speak()">Speak</button>
+
+    <h3>English → Amharic Translation</h3>
+    <textarea id="translate-text" placeholder="Enter English text...">Hello world</textarea>
+    <br>
+    <button onclick="translateText()">Translate</button>
+    <div id="translation-result" class="translation-result" style="display:none;"></div>
+
+    <h3>Translate & Speak (English to Amharic)</h3>
+    <textarea id="translate-tts-text" placeholder="Enter English text...">Hello world</textarea>
+    <br>
+    <button onclick="translateAndSpeak()">Translate & Speak</button>
+
     <audio id="audio" controls></audio>
 
     <script>
+        // TTS only
         function speak() {
-            const text = document.getElementById('text').value;
-            const lang = document.getElementById('lang').value;
+            const text = document.getElementById('tts-text').value;
+            const lang = document.getElementById('tts-lang').value;
 
             fetch('/api/tts', {
                 method: 'POST',
@@ -49,6 +65,57 @@
             .catch(err => {
                 console.error('Error:', err);
                 alert('Failed to generate speech: ' + err.message);
+            });
+        }
+
+        // Translation only
+        function translateText() {
+            const text = document.getElementById('translate-text').value;
+            if (!text) return alert('Please enter text to translate.');
+
+            fetch('/api/translate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text, target_lang: 'am', source_lang: 'en' })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) throw new Error(data.error);
+                const resultDiv = document.getElementById('translation-result');
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = `<strong>Translated:</strong> ${data.translated}`;
+            })
+            .catch(err => {
+                console.error('Translation error:', err);
+                alert('Translation failed: ' + err.message);
+            });
+        }
+
+        // Translate + TTS
+        function translateAndSpeak() {
+            const text = document.getElementById('translate-tts-text').value;
+
+            fetch('/api/translate_tts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text, target_lang: 'am', source_lang: 'en' })
+            })
+            .then(async response => {
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Server error (${response.status}): ${errorText}`);
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                const url = URL.createObjectURL(blob);
+                const audio = document.getElementById('audio');
+                audio.src = url;
+                audio.play().catch(e => console.error('Playback failed:', e));
+            })
+            .catch(err => {
+                console.error('Translate & Speak error:', err);
+                alert('Failed: ' + err.message);
             });
         }
     </script>
